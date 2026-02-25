@@ -1,3 +1,4 @@
 packages:
-  - 'week-1/*'
-  - 'week-2/*'
+  - 'apps/*'
+  - 'archive/v1-prototype/legacy-core'
+  - 'archive/v1-prototype/legacy-ui/*'

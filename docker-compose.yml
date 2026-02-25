@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # Infrastructure
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  db:
+    image: timescale/timescaledb:latest-pg12
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-exchange_db}
+      POSTGRES_USER: ${POSTGRES_USER:-exchange_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-exchange_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - exchange-db-data:/var/lib/postgresql/data
+    restart: always
+
+  # Services
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-exchange_user}:${POSTGRES_PASSWORD:-exchange_secret}@db:5432/${POSTGRES_DB:-exchange_db}
+    depends_on:
+      - redis
+      - db
+    restart: on-failure
+
+  matching-engine:
+    build:
+      context: .
+      dockerfile: apps/matching-engine/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+    restart: on-failure
+
+  broadcaster:
+    build:
+      context: .
+      dockerfile: apps/broadcaster/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - redis
+    restart: on-failure
+
+  processor:
+    build:
+      context: .
+      dockerfile: apps/processor/Dockerfile
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-exchange_user}:${POSTGRES_PASSWORD:-exchange_secret}@db:5432/${POSTGRES_DB:-exchange_db}
+    depends_on:
+      - redis
+      - db
+    restart: on-failure
+
+  client-app:
+    build:
+      context: .
+      dockerfile: apps/client-app/Dockerfile
+    ports:
+      - "80:3000"
+    environment:
+      NEXT_PUBLIC_WS_URL: ws://localhost:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+    depends_on:
+      - gateway
+      - broadcaster
+    restart: always
+
+volumes:
+  exchange-db-data:
