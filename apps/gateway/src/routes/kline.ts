@@ -1,5 +1,5 @@
 import { Client } from 'pg';
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 import { RedisManager } from "../RedisManager";
 
 const pgClient = new Client({
@@ -11,7 +11,7 @@ const pgClient = new Client({
 });
 pgClient.connect();
 
-export const klineRouter = Router();
+export const klineRouter: ExpressRouter = Router();
 
 klineRouter.get("/", async (req, res) => {
     const { market, interval, startTime, endTime } = req.query;

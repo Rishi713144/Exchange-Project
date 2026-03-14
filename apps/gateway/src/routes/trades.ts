@@ -1,6 +1,6 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 
-export const tradesRouter = Router();
+export const tradesRouter: ExpressRouter = Router();
 
 tradesRouter.get("/", async (req, res) => {
     const { market } = req.query;

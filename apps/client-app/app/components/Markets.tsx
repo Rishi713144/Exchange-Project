@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Ticker } from "../utils/types";
+import type { Ticker } from "../utils/types";
 import { getTickers } from "../utils/httpClient";
 import { useRouter } from "next/navigation";
 

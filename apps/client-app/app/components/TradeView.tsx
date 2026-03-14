@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ChartManager } from "../utils/ChartManager";
 import { getKlines } from "../utils/httpClient";
-import { KLine } from "../utils/types";
+import type { KLine } from "../utils/types";
 
 export function TradeView({
   market,

@@ -48,6 +48,12 @@ Thumbs.db
 # Miscellaneous
 snapshot.json
 *.tsbuildinfo
+
+# Backup/Copy files
+*\ copy.*
+*.copy.*
+next-env.d\ copy.ts
+next.config\ copy.mjs
 *.map
 *.tmp
 *.swp
