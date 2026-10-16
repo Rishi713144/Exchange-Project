@@ -1,8 +1,7 @@
 import axios from "axios";
 import type { Depth, KLine, Ticker, Trade } from "./types";
 
-// const BASE_URL = "https://exchange-proxy.100xdevs.com/api/v1";
-const BASE_URL = "http://localhost:3000/api/v1";
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000"}/api/v1`;
 
 export async function getTicker(market: string): Promise<Ticker> {
     const tickers = await getTickers();
@@ -31,5 +30,5 @@ export async function getTrades(market: string): Promise<Trade[]> {
 export async function getKlines(market: string, interval: string, startTime: number, endTime: number): Promise<KLine[]> {
     const response = await axios.get(`${BASE_URL}/klines?symbol=${market}&interval=${interval}&startTime=${startTime}&endTime=${endTime}`);
     const data: KLine[] = response.data;
-    return data.sort((x, y) => (Number(x.end) < Number(y.end) ? -1 : 1));
+    return data.sort((x, y) => (new Date(x.end).getTime() < new Date(y.end).getTime() ? -1 : 1));
 }

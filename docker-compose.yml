@@ -41,6 +41,10 @@ services:
       dockerfile: apps/matching-engine/Dockerfile
     environment:
       REDIS_URL: redis://redis:6379
+      WITH_SNAPSHOT: "true"
+      SNAPSHOT_PATH: /usr/src/app/snapshots/snapshot.json
+    volumes:
+      - engine-snapshots:/usr/src/app/snapshots
     depends_on:
       - redis
     restart: on-failure
@@ -69,15 +73,15 @@ services:
       - db
     restart: on-failure
 
-  client-app:
+  web:
     build:
       context: .
-      dockerfile: apps/client-app/Dockerfile
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3001}
     ports:
       - "80:3000"
-    environment:
-      NEXT_PUBLIC_WS_URL: ws://localhost:3001
-      NEXT_PUBLIC_API_URL: http://localhost:3000
     depends_on:
       - gateway
       - broadcaster
@@ -85,3 +89,4 @@ services:
 
 volumes:
   exchange-db-data:
+  engine-snapshots:

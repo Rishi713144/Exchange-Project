@@ -1,7 +1,8 @@
+import "dotenv/config";
 import { WebSocketServer } from "ws";
 import { UserManager } from "./UserManager";
 
-const PORT = parseInt(process.env.PORT || "3001");
+const PORT = parseInt(process.env.BROADCASTER_PORT || process.env.PORT || "3001");
 const wss = new WebSocketServer({ port: PORT });
 
 wss.on("connection", (ws) => {

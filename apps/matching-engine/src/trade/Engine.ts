@@ -18,11 +18,13 @@ export class Engine {
     private orderbooks: Orderbook[] = [];
     private balances: Map<string, UserBalance> = new Map();
 
+    private snapshotPath = process.env.SNAPSHOT_PATH || "./snapshot.json";
+
     constructor() {
         let snapshot = null
         try {
-            if (process.env.WITH_SNAPSHOT) {
-                snapshot = fs.readFileSync("./snapshot.json");
+            if (process.env.WITH_SNAPSHOT === "true") {
+                snapshot = fs.readFileSync(this.snapshotPath);
             }
         } catch (e) {
             console.log("No snapshot found");
@@ -46,7 +48,7 @@ export class Engine {
             orderbooks: this.orderbooks.map(o => o.getSnapshot()),
             balances: Array.from(this.balances.entries())
         }
-        fs.writeFileSync("./snapshot.json", JSON.stringify(snapshotSnapshot));
+        fs.writeFileSync(this.snapshotPath, JSON.stringify(snapshotSnapshot));
     }
 
     process({ message, clientId }: {message: MessageFromApi, clientId: string}) {
@@ -259,6 +261,16 @@ export class Engine {
                     p: fill.price,
                     q: fill.qty.toString(),
                     s: market,
+                }
+            });
+
+            RedisManager.getInstance().publishMessage(`ticker@${market}`, {
+                stream: `ticker@${market}`,
+                data: {
+                    e: "ticker",
+                    c: fill.price,
+                    s: market,
+                    id: fill.tradeId,
                 }
             });
         });

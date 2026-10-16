@@ -74,8 +74,8 @@ export function Depth({ market }: {market: string}) {
             setAsks(d.asks);
         });
 
-        getTicker(market).then(t => setPrice(t.lastPrice));
-        getTrades(market).then(t => setPrice(t[0].price));
+        getTicker(market).then(t => setPrice(t.lastPrice)).catch(() => {});
+        getTrades(market).then(t => { if (t.length) setPrice(t[0].price); }).catch(() => {});
 
         return () => {
             SignalingManager.getInstance().sendMessage({"method":"UNSUBSCRIBE","params":[`depth@${market}`]});

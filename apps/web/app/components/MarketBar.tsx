@@ -8,7 +8,7 @@ export const MarketBar = ({market}: {market: string}) => {
     const [ticker, setTicker] = useState<Ticker | null>(null);
 
     useEffect(() => {
-        getTicker(market).then(setTicker);
+        getTicker(market).then(setTicker).catch(() => {});
         SignalingManager.getInstance().registerCallback("ticker", (data: Partial<Ticker>)  =>  setTicker(prevTicker => ({
             firstPrice: data?.firstPrice ?? prevTicker?.firstPrice ?? '',
             high: data?.high ?? prevTicker?.high ?? '',
@@ -21,11 +21,11 @@ export const MarketBar = ({market}: {market: string}) => {
             trades: data?.trades ?? prevTicker?.trades ?? '',
             volume: data?.volume ?? prevTicker?.volume ?? '',
         })), `TICKER-${market}`);
-        SignalingManager.getInstance().sendMessage({"method":"SUBSCRIBE","params":[`ticker.${market}`]}	);
+        SignalingManager.getInstance().sendMessage({"method":"SUBSCRIBE","params":[`ticker@${market}`]}	);
 
         return () => {
             SignalingManager.getInstance().deRegisterCallback("ticker", `TICKER-${market}`);
-            SignalingManager.getInstance().sendMessage({"method":"UNSUBSCRIBE","params":[`ticker.${market}`]}	);
+            SignalingManager.getInstance().sendMessage({"method":"UNSUBSCRIBE","params":[`ticker@${market}`]}	);
         }
     }, [market])
     // 

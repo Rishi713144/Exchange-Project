@@ -1,26 +1,40 @@
-const { Client } = require('pg');
+import "dotenv/config";
+import { Client } from 'pg';
 
 const client = new Client({
-    user: 'your_user',
-    host: 'localhost',
-    database: 'my_database',
-    password: 'your_password',
-    port: 5432,
+    connectionString: process.env.DATABASE_URL || 'postgresql://exchange_user:exchange_secret@localhost:5432/exchange_db',
 });
 
 async function initializeDB() {
     await client.connect();
 
     await client.query(`
-        DROP TABLE IF EXISTS "tata_prices";
+        DROP MATERIALIZED VIEW IF EXISTS klines_1m;
+        DROP MATERIALIZED VIEW IF EXISTS klines_1h;
+        DROP MATERIALIZED VIEW IF EXISTS klines_1w;
+        DROP TABLE IF EXISTS "tata_prices" CASCADE;
         CREATE TABLE "tata_prices"(
             time            TIMESTAMP WITH TIME ZONE NOT NULL,
             price   DOUBLE PRECISION,
             volume      DOUBLE PRECISION,
             currency_code   VARCHAR (10)
         );
-        
-        SELECT create_hypertable('tata_prices', 'time', 'price', 2);
+
+        SELECT create_hypertable('tata_prices', 'time');
+    `);
+
+    await client.query(`
+        DROP TABLE IF EXISTS "trades";
+        CREATE TABLE "trades"(
+            id              BIGINT NOT NULL,
+            time            TIMESTAMP WITH TIME ZONE NOT NULL,
+            price           DOUBLE PRECISION,
+            quantity        DOUBLE PRECISION,
+            quote_quantity  DOUBLE PRECISION,
+            is_buyer_maker  BOOLEAN,
+            currency_code   VARCHAR (10),
+            PRIMARY KEY (currency_code, id)
+        );
     `);
 
     await client.query(`
@@ -69,4 +83,9 @@ async function initializeDB() {
     console.log("Database initialized successfully");
 }
 
-initializeDB().catch(console.error);
+initializeDB()
+    .then(() => process.exit(0))
+    .catch((err) => {
+        console.error(err);
+        process.exit(1);
+    });

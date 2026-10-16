@@ -1,3 +1,4 @@
+import "dotenv/config";
 import axios from "axios";
 
 const BASE_URL = process.env.API_URL || "http://localhost:3000";

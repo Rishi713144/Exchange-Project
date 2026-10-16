@@ -1,7 +1,6 @@
 import type { Ticker } from "./types";
 
-// export const BASE_URL = "wss://ws.backpack.exchange/"
-export const BASE_URL = "ws://localhost:3001"
+export const BASE_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3001";
 
 export class SignalingManager {
     private ws: WebSocket;

@@ -20,6 +20,7 @@ archive/**/dist/
 
 # Environment files
 .env*
+!.env.example
 .envrc
 .venv/
 env/
@@ -48,6 +49,10 @@ Thumbs.db
 # Miscellaneous
 snapshot.json
 *.tsbuildinfo
+
+# Local-only docs (not published)
+ROADMAP.md
+*.local.md
 
 # Backup/Copy files
 *\ copy.*
@@ -91,3 +96,4 @@ logs/
 log/
 debug.log
 error.log
+ROADMAP.md

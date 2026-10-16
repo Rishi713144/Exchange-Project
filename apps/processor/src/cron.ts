@@ -1,16 +1,12 @@
-import { Client } from 'pg'; 
+import "dotenv/config";
+import { Client } from 'pg';
 
 const client = new Client({
-    user: 'your_user',
-    host: 'localhost',
-    database: 'my_database',
-    password: 'your_password',
-    port: 5432,
+    connectionString: process.env.DATABASE_URL || 'postgresql://exchange_user:exchange_secret@localhost:5432/exchange_db',
 });
 client.connect();
 
 async function refreshViews() {
-
     await client.query('REFRESH MATERIALIZED VIEW klines_1m');
     await client.query('REFRESH MATERIALIZED VIEW klines_1h');
     await client.query('REFRESH MATERIALIZED VIEW klines_1w');
@@ -21,5 +17,5 @@ async function refreshViews() {
 refreshViews().catch(console.error);
 
 setInterval(() => {
-    refreshViews()
-}, 1000 * 10 );
+    refreshViews();
+}, 1000 * 10);
