@@ -17,11 +17,16 @@ export class UserManager {
         return this.instance;
     }
 
-    public addUser(ws: WebSocket) {
+    public addUser(ws: WebSocket, exchangeUserId?: string) {
         const id = this.getRandomId();
-        const user = new User(id, ws);
+        const user = new User(id, ws, exchangeUserId);
         this.users.set(id, user);
         this.registerOnClose(ws, id);
+
+        if (exchangeUserId) {
+            SubscriptionManager.getInstance().subscribe(id, SubscriptionManager.userChannel(exchangeUserId));
+        }
+
         return user;
     }
 

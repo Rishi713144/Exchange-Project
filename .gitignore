@@ -1,6 +1,8 @@
 
 # Dependency directories and logs
 node_modules/
+package-lock.json
+yarn.lock
 apps/**/node_modules/
 archive/**/node_modules/
 *.log
@@ -17,6 +19,9 @@ build/
 out/
 apps/**/dist/
 archive/**/dist/
+
+# Local archives and legacy prototypes
+archive/
 
 # Environment files
 .env*
@@ -49,10 +54,6 @@ Thumbs.db
 # Miscellaneous
 snapshot.json
 *.tsbuildinfo
-
-# Local-only docs (not published)
-ROADMAP.md
-*.local.md
 
 # Backup/Copy files
 *\ copy.*
@@ -96,4 +97,3 @@ logs/
 log/
 debug.log
 error.log
-ROADMAP.md

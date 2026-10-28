@@ -1,45 +1,34 @@
 import { Router, type Router as ExpressRouter } from "express";
-import { z } from "zod";
 import { RedisManager } from "../RedisManager";
 import { CREATE_ORDER, CANCEL_ORDER, ON_RAMP, GET_OPEN_ORDERS } from "../types";
 
 export const orderRouter: ExpressRouter = Router();
 
-const createOrderSchema = z.object({
-    market: z.string().min(1),
-    price: z.string().min(1),
-    quantity: z.string().min(1),
-    side: z.enum(["buy", "sell"]),
-    userId: z.string().min(1),
-});
-
-const cancelOrderSchema = z.object({
-    orderId: z.string().min(1),
-    market: z.string().min(1),
-});
-
 orderRouter.post("/", async (req, res) => {
-    const parsed = createOrderSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() });
-    }
-
+    const { market, price, quantity, side, userId } = req.body;
+    console.log({ market, price, quantity, side, userId })
+    //TODO: can u make the type of the response object right? Right now it is a union.
     const response = await RedisManager.getInstance().sendAndAwait({
         type: CREATE_ORDER,
-        data: parsed.data,
+        data: {
+            market,
+            price,
+            quantity,
+            side,
+            userId
+        }
     });
     res.json(response.payload);
 });
 
 orderRouter.delete("/", async (req, res) => {
-    const parsed = cancelOrderSchema.safeParse(req.body);
-    if (!parsed.success) {
-        return res.status(400).json({ error: "Invalid request body", details: parsed.error.flatten() });
-    }
-
+    const { orderId, market } = req.body;
     const response = await RedisManager.getInstance().sendAndAwait({
         type: CANCEL_ORDER,
-        data: parsed.data,
+        data: {
+            orderId,
+            market
+        }
     });
     res.json(response.payload);
 });

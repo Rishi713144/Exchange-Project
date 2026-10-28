@@ -1,17 +1,17 @@
 {
   "name": "broadcaster",
   "version": "1.0.0",
-  "description": "WebSocket broadcaster for market data streams",
-  "main": "dist/index.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "pnpm run build && pnpm run start"
   },
   "keywords": [],
+  "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.4.5",
     "redis": "^4.6.14",
     "ws": "^8.17.1"
   },

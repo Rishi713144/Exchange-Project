@@ -1,2 +1,11 @@
 packages:
   - 'apps/*'
+  - 'archive/v1-prototype/legacy-core'
+  - 'archive/v1-prototype/legacy-ui/*'
+
+onlyBuiltDependencies:
+  - bufferutil
+  - esbuild
+  - sharp
+  - unrs-resolver
+  - utf-8-validate

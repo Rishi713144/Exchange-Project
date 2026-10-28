@@ -1,62 +1,42 @@
-import { Client } from 'pg';
 import { Router, type Router as ExpressRouter } from "express";
-
-const pgClient = new Client({
-    connectionString: process.env.DATABASE_URL || 'postgresql://exchange_user:exchange_secret@localhost:5432/exchange_db',
-});
-pgClient.connect();
+import { pool } from "../db";
 
 export const tickersRouter: ExpressRouter = Router();
 
-tickersRouter.get("/", async (req, res) => {
-    const { symbol } = req.query;
-    const params: string[] = [];
-    let where = `WHERE time > now() - interval '24 hours'`;
-    if (symbol) {
-        where += ` AND currency_code = $1`;
-        params.push(symbol as string);
-    }
+function normalize(value: unknown): string {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed.toString() : "0";
+}
 
+tickersRouter.get("/", async (_req, res) => {
     try {
-        const result = await pgClient.query(
-            `SELECT
-                currency_code AS symbol,
-                last(price, time) AS last_price,
-                first(price, time) AS first_price,
-                max(price) AS high,
-                min(price) AS low,
-                sum(volume) AS volume,
-                sum(price * volume) AS quote_volume,
-                count(*) AS trades
-             FROM tata_prices
-             ${where}
-             GROUP BY currency_code
-             ORDER BY symbol ASC`,
-            params
-        );
+        const result = await pool.query(`
+            SELECT symbol, first_price, last_price, high, low, volume, quote_volume, trades, updated_at
+            FROM ticker
+            ORDER BY quote_volume DESC, symbol ASC
+        `);
 
-        const tickers = result.rows.map((x) => {
-            const last = Number(x.last_price) || 0;
-            const first = Number(x.first_price) || 0;
-            const change = last - first;
-            const changePercent = first ? (change / first) * 100 : 0;
+        res.json(result.rows.map((row) => {
+            const firstPrice = Number(row.first_price);
+            const lastPrice = Number(row.last_price);
+            const priceChange = lastPrice - firstPrice;
+            const priceChangePercent = firstPrice === 0 ? 0 : (priceChange / firstPrice) * 100;
+
             return {
-                symbol: x.symbol,
-                lastPrice: last.toString(),
-                firstPrice: first.toString(),
-                high: (Number(x.high) || 0).toString(),
-                low: (Number(x.low) || 0).toString(),
-                volume: (Number(x.volume) || 0).toString(),
-                quoteVolume: (Number(x.quote_volume) || 0).toString(),
-                priceChange: change.toString(),
-                priceChangePercent: changePercent.toString(),
-                trades: String(x.trades),
+                firstPrice: normalize(row.first_price),
+                high: normalize(row.high),
+                lastPrice: normalize(row.last_price),
+                low: normalize(row.low),
+                priceChange: normalize(priceChange),
+                priceChangePercent: priceChangePercent.toFixed(4),
+                quoteVolume: normalize(row.quote_volume),
+                symbol: row.symbol,
+                trades: String(row.trades),
+                volume: normalize(row.volume),
             };
-        });
-
-        res.json(tickers);
+        }));
     } catch (err) {
-        console.log(err);
-        res.status(500).send(err);
+        console.error("Failed to fetch tickers", err);
+        res.status(500).json({ error: "Failed to fetch tickers" });
     }
 });

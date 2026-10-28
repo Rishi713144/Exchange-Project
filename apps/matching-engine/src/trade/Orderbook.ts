@@ -15,6 +15,31 @@ export interface Fill {
     tradeId: number;
     otherUserId: string;
     markerOrderId: string;
+    makerFilled: number;
+    makerQuantity: number;
+}
+
+const PRECISION = 8;
+const SCALE = 10 ** PRECISION;
+
+export function toUnits(value: number): number {
+    return Math.round(value * SCALE);
+}
+
+export function fromUnits(units: number): number {
+    return units / SCALE;
+}
+
+export function formatUnits(units: number): string {
+    const sign = units < 0 ? "-" : "";
+    const absolute = Math.abs(units);
+    const whole = Math.floor(absolute / SCALE);
+    const fraction = (absolute % SCALE).toString().padStart(PRECISION, "0").replace(/0+$/, "");
+    return fraction.length > 0 ? `${sign}${whole}.${fraction}` : `${sign}${whole}`;
+}
+
+export function formatNumber(value: number): string {
+    return formatUnits(toUnits(value));
 }
 
 export class Orderbook {
@@ -30,7 +55,8 @@ export class Orderbook {
         this.asks = asks;
         this.baseAsset = baseAsset;
         this.lastTradeId = lastTradeId || 0;
-        this.currentPrice = currentPrice ||0;
+        this.currentPrice = currentPrice || 0;
+        this.sortBook();
     }
 
     ticker() {
@@ -47,138 +73,159 @@ export class Orderbook {
         }
     }
 
-    //TODO: Add self trade prevention
+    private sortBook() {
+        this.bids.sort((a, b) => toUnits(b.price) - toUnits(a.price) || a.orderId.localeCompare(b.orderId));
+        this.asks.sort((a, b) => toUnits(a.price) - toUnits(b.price) || a.orderId.localeCompare(b.orderId));
+    }
+
     addOrder(order: Order): {
         executedQty: number,
         fills: Fill[]
     } {
-        if (order.side === "buy") {
-            const {executedQty, fills} = this.matchBid(order); 
-            order.filled = executedQty;
-            if (executedQty === order.quantity) {
-                return {
-                    executedQty,
-                    fills
-                }
+        const match = order.side === "buy" ? this.matchBid(order) : this.matchAsk(order);
+        const { executedQty, fills } = match;
+
+        order.filled = executedQty;
+        if (toUnits(executedQty) < toUnits(order.quantity)) {
+            if (order.side === "buy") {
+                this.bids.push(order);
+            } else {
+                this.asks.push(order);
             }
-            this.bids.push(order);
-            return {
-                executedQty,
-                fills
-            }
-        } else {
-            const {executedQty, fills} = this.matchAsk(order);
-            order.filled = executedQty;
-            if (executedQty === order.quantity) {
-                return {
-                    executedQty,
-                    fills
-                }
-            }
-            this.asks.push(order);
-            return {
-                executedQty,
-                fills
-            }
+            this.sortBook();
+        }
+
+        return {
+            executedQty,
+            fills
         }
     }
 
-    matchBid(order: Order): {fills: Fill[], executedQty: number} {
+    matchBid(order: Order): { fills: Fill[], executedQty: number } {
         const fills: Fill[] = [];
-        let executedQty = 0;
+        let executedUnits = 0;
+        const orderPriceUnits = toUnits(order.price);
+        const orderQtyUnits = toUnits(order.quantity);
 
-        for (let i = 0; i < this.asks.length; i++) {
-            if (this.asks[i].price <= order.price && executedQty < order.quantity) {
-                const filledQty = Math.min((order.quantity - executedQty), this.asks[i].quantity);
-                executedQty += filledQty;
-                this.asks[i].filled += filledQty;
-                fills.push({
-                    price: this.asks[i].price.toString(),
-                    qty: filledQty,
-                    tradeId: this.lastTradeId++,
-                    otherUserId: this.asks[i].userId,
-                    markerOrderId: this.asks[i].orderId
-                });
+        for (let i = 0; i < this.asks.length && executedUnits < orderQtyUnits; i++) {
+            const ask = this.asks[i];
+            const askPriceUnits = toUnits(ask.price);
+            if (askPriceUnits > orderPriceUnits) {
+                break;
             }
-        }
-        for (let i = 0; i < this.asks.length; i++) {
-            if (this.asks[i].filled === this.asks[i].quantity) {
-                this.asks.splice(i, 1);
-                i--;
+            if (ask.userId === order.userId) {
+                continue;
             }
+
+            const askQtyUnits = toUnits(ask.quantity);
+            const askFilledUnits = toUnits(ask.filled);
+            const availableUnits = askQtyUnits - askFilledUnits;
+            if (availableUnits <= 0) {
+                continue;
+            }
+
+            const filledUnits = Math.min(orderQtyUnits - executedUnits, availableUnits);
+            executedUnits += filledUnits;
+
+            const cumulativeFilledUnits = askFilledUnits + filledUnits;
+            ask.filled = fromUnits(cumulativeFilledUnits);
+
+            fills.push({
+                price: formatUnits(askPriceUnits),
+                qty: fromUnits(filledUnits),
+                tradeId: this.lastTradeId++,
+                otherUserId: ask.userId,
+                markerOrderId: ask.orderId,
+                makerFilled: ask.filled,
+                makerQuantity: ask.quantity
+            });
         }
+
+        this.removeFilled(this.asks);
+
         return {
             fills,
-            executedQty
+            executedQty: fromUnits(executedUnits)
         };
     }
 
-    matchAsk(order: Order): {fills: Fill[], executedQty: number} {
+    matchAsk(order: Order): { fills: Fill[], executedQty: number } {
         const fills: Fill[] = [];
-        let executedQty = 0;
-        
-        for (let i = 0; i < this.bids.length; i++) {
-            if (this.bids[i].price >= order.price && executedQty < order.quantity) {
-                const amountRemaining = Math.min(order.quantity - executedQty, this.bids[i].quantity);
-                executedQty += amountRemaining;
-                this.bids[i].filled += amountRemaining;
-                fills.push({
-                    price: this.bids[i].price.toString(),
-                    qty: amountRemaining,
-                    tradeId: this.lastTradeId++,
-                    otherUserId: this.bids[i].userId,
-                    markerOrderId: this.bids[i].orderId
-                });
+        let executedUnits = 0;
+        const orderPriceUnits = toUnits(order.price);
+        const orderQtyUnits = toUnits(order.quantity);
+
+        for (let i = 0; i < this.bids.length && executedUnits < orderQtyUnits; i++) {
+            const bid = this.bids[i];
+            const bidPriceUnits = toUnits(bid.price);
+            if (bidPriceUnits < orderPriceUnits) {
+                break;
             }
-        }
-        for (let i = 0; i < this.bids.length; i++) {
-            if (this.bids[i].filled === this.bids[i].quantity) {
-                this.bids.splice(i, 1);
-                i--;
+            if (bid.userId === order.userId) {
+                continue;
             }
+
+            const bidQtyUnits = toUnits(bid.quantity);
+            const bidFilledUnits = toUnits(bid.filled);
+            const availableUnits = bidQtyUnits - bidFilledUnits;
+            if (availableUnits <= 0) {
+                continue;
+            }
+
+            const filledUnits = Math.min(orderQtyUnits - executedUnits, availableUnits);
+            executedUnits += filledUnits;
+
+            const cumulativeFilledUnits = bidFilledUnits + filledUnits;
+            bid.filled = fromUnits(cumulativeFilledUnits);
+
+            fills.push({
+                price: formatUnits(bidPriceUnits),
+                qty: fromUnits(filledUnits),
+                tradeId: this.lastTradeId++,
+                otherUserId: bid.userId,
+                markerOrderId: bid.orderId,
+                makerFilled: bid.filled,
+                makerQuantity: bid.quantity
+            });
         }
+
+        this.removeFilled(this.bids);
+
         return {
             fills,
-            executedQty
+            executedQty: fromUnits(executedUnits)
         };
     }
 
-    //TODO: Can you make this faster? Can you compute this during order matches?
+    private removeFilled(orders: Order[]) {
+        for (let i = orders.length - 1; i >= 0; i--) {
+            if (toUnits(orders[i].filled) >= toUnits(orders[i].quantity)) {
+                orders.splice(i, 1);
+            }
+        }
+    }
+
     getDepth() {
-        const bids: [string, string][] = [];
-        const asks: [string, string][] = [];
+        const bids = this.aggregateDepth(this.bids, true);
+        const asks = this.aggregateDepth(this.asks, false);
+        return { bids, asks };
+    }
 
-        const bidsObj: {[key: string]: number} = {};
-        const asksObj: {[key: string]: number} = {};
+    private aggregateDepth(orders: Order[], descending: boolean): [string, string][] {
+        const levels: Map<number, number> = new Map();
 
-        for (let i = 0; i < this.bids.length; i++) {
-            const order = this.bids[i];
-            if (!bidsObj[order.price]) {
-                bidsObj[order.price] = 0;
+        for (const order of orders) {
+            const priceUnits = toUnits(order.price);
+            const remainingUnits = toUnits(order.quantity) - toUnits(order.filled);
+            if (remainingUnits <= 0) {
+                continue;
             }
-            bidsObj[order.price] += order.quantity;
+            levels.set(priceUnits, (levels.get(priceUnits) || 0) + remainingUnits);
         }
 
-        for (let i = 0; i < this.asks.length; i++) {
-            const order = this.asks[i];
-            if (!asksObj[order.price]) {
-                asksObj[order.price] = 0;
-            }
-            asksObj[order.price] += order.quantity;
-        }
-
-        for (const price in bidsObj) {
-            bids.push([price, bidsObj[price].toString()]);
-        }
-
-        for (const price in asksObj) {
-            asks.push([price, asksObj[price].toString()]);
-        }
-
-        return {
-            bids,
-            asks
-        };
+        return Array.from(levels.entries())
+            .sort(([a], [b]) => descending ? b - a : a - b)
+            .map(([priceUnits, quantityUnits]) => [formatUnits(priceUnits), formatUnits(quantityUnits)]);
     }
 
     getOpenOrders(userId: string): Order[] {

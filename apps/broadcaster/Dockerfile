@@ -1,19 +1,25 @@
 FROM node:20-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g pnpm@10.28.0
+RUN corepack enable
 
 FROM base AS build
 WORKDIR /usr/src/app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/ ./apps/
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-RUN pnpm --filter broadcaster build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install
+
+RUN pnpm -r --filter broadcaster run build
 
 FROM base AS final
 WORKDIR /usr/src/app
-ENV NODE_ENV=production
-COPY --from=build /usr/src/app /usr/src/app
+COPY --from=build /usr/src/app/apps/broadcaster/dist ./apps/broadcaster/dist
+COPY --from=build /usr/src/app/apps/broadcaster/package.json ./apps/broadcaster/
+COPY --from=build /usr/src/app/apps/broadcaster/node_modules ./apps/broadcaster/node_modules
+COPY --from=build /usr/src/app/pnpm-workspace.yaml pnpm-workspace.yaml
+COPY --from=build /usr/src/app/package.json ./
+COPY --from=build /usr/src/app/node_modules ./node_modules
 
 EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 CMD node -e "const s=require('net').connect(3001,'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1))"
 CMD [ "node", "apps/broadcaster/dist/index.js" ]

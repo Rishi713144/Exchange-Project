@@ -9,6 +9,10 @@ export type TickerUpdateMessage = {
         v?: string,
         V?: string,
         s?: string,
+        fp?: string,
+        pc?: string,
+        pcp?: string,
+        n?: number,
         id: number,
         e: "ticker"
     }
@@ -35,4 +39,18 @@ export type TradeAddedMessage = {
     }
 }
 
-export type WsMessage = TickerUpdateMessage | DepthUpdateMessage | TradeAddedMessage;
+export type FillUpdateMessage = {
+    stream: string,
+    data: {
+        e: "fill",
+        t: number,
+        s: string,
+        p: string,
+        q: string,
+        side: "buy" | "sell",
+        o: string,
+        m: boolean,
+    }
+}
+
+export type WsMessage = TickerUpdateMessage | DepthUpdateMessage | TradeAddedMessage | FillUpdateMessage;

@@ -77,7 +77,7 @@ describe("Simple orders", () => {
 });
 
 describe("Self trade prevention", () => {
-    it.todo("User cant self trade", () => { 
+    it("User cant self trade", () => {
         const orderbook = new Orderbook("TATA", [{
             price: 999,
             quantity: 1,
@@ -101,19 +101,45 @@ describe("Self trade prevention", () => {
             orderId: "3",
             filled: 0,
             side: "sell" as ("buy" | "sell"),
-            userId: "3"
+            userId: "1"
         };
 
         const { fills, executedQty } = orderbook.addOrder(order);
         expect(fills.length).toBe(0);
         expect(executedQty).toBe(0);
+        expect(orderbook.bids[0].filled).toBe(0);
+        expect(orderbook.asks.length).toBe(2);
+    });
+
+    it("Still matches orders from a different user", () => {
+        const orderbook = new Orderbook("TATA", [{
+            price: 999,
+            quantity: 1,
+            orderId: "1",
+            filled: 0,
+            side: "buy" as ("buy" | "sell"),
+            userId: "1"
+        }], [], 0, 0);
+
+        const order = {
+            price: 999,
+            quantity: 1,
+            orderId: "2",
+            filled: 0,
+            side: "sell" as ("buy" | "sell"),
+            userId: "2"
+        };
+
+        const { fills, executedQty } = orderbook.addOrder(order);
+        expect(fills.length).toBe(1);
+        expect(executedQty).toBe(1);
+        expect(orderbook.bids.length).toBe(0);
     });
 
 });
 
 describe("Precission errors are taken care of", () => {
-    // This does succeed right now as well, but can be flaky based on how long the decimals are
-    it.todo("Bid doesnt persist even with decimals", () => {
+    it("Bid doesnt persist even with decimals", () => {
         const orderbook = new Orderbook("TATA", [{
             price: 999,
             quantity: 0.551123,
@@ -142,6 +168,7 @@ describe("Precission errors are taken care of", () => {
 
         const { fills, executedQty } = orderbook.addOrder(order);
         expect(fills.length).toBe(1);
+        expect(executedQty).toBe(0.551123);
         expect(orderbook.bids.length).toBe(0);
         expect(orderbook.asks.length).toBe(1);
     }); 

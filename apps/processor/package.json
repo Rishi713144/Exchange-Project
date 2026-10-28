@@ -1,19 +1,19 @@
 {
   "name": "processor",
   "version": "1.0.0",
-  "description": "Consumes engine events and writes market data to Postgres",
-  "main": "dist/index.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js",
-    "seed:db": "tsc && node dist/seed-db.js",
-    "refresh:views": "tsc && node dist/cron.js"
+    "dev": "pnpm run build && node dist/index.js",
+    "seed:db": "pnpm run build && node dist/seed-db.js",
+    "refresh:views": "pnpm run build && node dist/cron.js"
   },
   "keywords": [],
+  "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.4.5",
     "pg": "^8.12.0",
     "redis": "^4.6.14"
   },
