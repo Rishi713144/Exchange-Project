@@ -6,7 +6,7 @@ import { Appbar } from "./components/Appbar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Exchange | Trade crypto",
+  title: "Exchange ",
   description: "A real-time cryptocurrency exchange with live order books, trades and markets.",
 };
 

@@ -9,9 +9,11 @@ export function TradeView({
   market: string;
 }) {
   const chartRef = useRef<HTMLDivElement>(null);
-  const chartManagerRef = useRef<ChartManager>(null);
+  const chartManagerRef = useRef<ChartManager | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     const init = async () => {
       const now = Math.floor(Date.now() / 1000);
       const oneHour = 60 * 60;
@@ -24,28 +26,24 @@ export function TradeView({
           history = await getKlines(market, "1m", now - 7 * 24 * oneHour, now);
         }
 
-        const latest = history.reduce(
-          (max, kline) => Math.max(max, Math.floor(new Date(kline.end).getTime() / 1000)),
-          0
-        );
-        klineData = history.filter(
-          (kline) => Math.floor(new Date(kline.end).getTime() / 1000) > latest - oneHour
-        );
-      } catch (e) {}
+        klineData = history;
+      } catch (error) {
+        console.error(`Failed to load chart data for ${market}`, error);
+      }
 
-      if (chartRef) {
+      if (active && chartRef.current) {
         if (chartManagerRef.current) {
           chartManagerRef.current.destroy();
         }
         const chartManager = new ChartManager(
           chartRef.current,
           [
-            ...klineData?.map((x) => ({
+            ...klineData.map((x) => ({
               close: parseFloat(x.close),
               high: parseFloat(x.high),
               low: parseFloat(x.low),
               open: parseFloat(x.open),
-              timestamp: new Date(x.end), 
+              timestamp: Math.floor(new Date(x.end).getTime() / 1000),
             })),
           ].sort((x, y) => (x.timestamp < y.timestamp ? -1 : 1)) || [],
           {
@@ -53,12 +51,18 @@ export function TradeView({
             color: "white",
           }
         );
-        //@ts-ignore
         chartManagerRef.current = chartManager;
       }
     };
+
     init();
-  }, [market, chartRef]);
+
+    return () => {
+      active = false;
+      chartManagerRef.current?.destroy();
+      chartManagerRef.current = null;
+    };
+  }, [market]);
 
   return (
     <>

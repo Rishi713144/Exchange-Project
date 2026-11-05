@@ -20,7 +20,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-exchange_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-exchange_secret}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - exchange-db-data:/var/lib/postgresql/data
     healthcheck:

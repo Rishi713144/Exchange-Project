@@ -23,8 +23,14 @@ export class ChartManager {
   };
 
   constructor(
-    ref: any,
-    initialData: any[],
+    ref: HTMLDivElement,
+    initialData: Array<{
+      open: number;
+      high: number;
+      low: number;
+      close: number;
+      timestamp: number;
+    }>,
     layout: { background: string; color: string }
   ) {
     const chart = createLightWeightChart(ref, {
@@ -91,8 +97,11 @@ export class ChartManager {
 
     this.candleSeries.setData(
       initialData.map((data) => ({
-        ...data,
-        time: (data.timestamp / 1000) as UTCTimestamp,
+        time: data.timestamp as UTCTimestamp,
+        open: data.open,
+        high: data.high,
+        low: data.low,
+        close: data.close,
       }))
     );
     this.chart.timeScale().fitContent();
