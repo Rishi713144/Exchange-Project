@@ -10,10 +10,10 @@ const GRAIN =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.55'/></svg>\")";
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Bodoni+Moda:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @font-face{font-family:'Nebula Mirthful';src:url('/fonts/NebulaMirthful.woff2') format('woff2'),url('/fonts/NebulaMirthful.otf') format('opentype'),url('/fonts/NebulaMirthful.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
-.ab-display{font-family:'Nebula Mirthful','Bodoni Moda',Didot,'Times New Roman',serif;font-weight:400;letter-spacing:-.01em}
-.ab{font-family:'Inter Tight',ui-sans-serif,system-ui,sans-serif}
+.ab-display{font-family:'Poppins',ui-sans-serif,system-ui,sans-serif;font-weight:500;letter-spacing:-.01em}
+.ab{font-family:'Poppins',ui-sans-serif,system-ui,sans-serif}
 .ab-ns{scrollbar-width:none;-ms-overflow-style:none}
 .ab-ns::-webkit-scrollbar{display:none}
 .lb{-webkit-mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(to right,transparent,#000 10%,#000 90%,transparent)}
@@ -190,16 +190,16 @@ export function Landing() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[42vh] bg-gradient-to-t from-[#02030a] via-[#02030a]/85 to-transparent" />
 
         {/* copy */}
-        <main className="relative z-30 flex min-h-0 flex-1 flex-col justify-between px-[3.5vw] pb-[17vh] pt-[11vh]">
+        <main className="hero-copy relative z-30 flex min-h-0 flex-1 flex-col justify-between px-[3.5vw] pb-[17vh] pt-[11vh]">
           <div className="max-w-[560px]">
-            <h1 className="ab-display text-[clamp(2.3rem,min(4.8vw,8vh),4.6rem)] leading-[1.04] text-[#eceef6]">
+            <h1 className="ab-display text-[clamp(2.175rem,calc(min(4.8vw,8vh)-2px),4.475rem)] leading-[1.04] text-[#c5cad8]">
               Practice Trading
               <br />
               on a Real-Time
               <br />
               Stock Exchange
             </h1>
-            <p className="mt-[2.4vh] max-w-[300px] text-[clamp(11px,1.5vh,13px)] leading-[1.55] text-slate-400">
+            <p className="mt-[2.4vh] max-w-[300px] text-[clamp(11px,1.5vh,13px)] leading-[1.55] text-slate-500">
               Place orders, watch the order book move and see trades match instantly, all in a simulated exchange built for learning.
             </p>
             <div className="mt-[3.4vh] flex items-center gap-3">
@@ -207,18 +207,18 @@ export function Landing() {
                 START TRADING
               </Link>
             </div>
-            <p className="mt-[1.6vh] text-[clamp(9px,1.2vh,11px)] text-slate-500">Simulation only. No real money involved.</p>
+            <p className="mt-[1.6vh] text-[clamp(9px,1.2vh,11px)] text-slate-600">Simulation only. No real money involved.</p>
           </div>
 
-          <div className="flex max-w-[620px] gap-0 text-white">
+          <div className="flex max-w-[620px] gap-0 text-[#b8bfce]">
             {[
-              ["Real-time", "Order book, trades and prices streamed live over WebSockets."],
-              ["Exact", "Fixed-precision matching so fractional quantities settle correctly."],
-              ["Fair", "Self-trade protection stops an account matching its own orders."],
+              ["REAL-TIME", "Order book, trades and prices streamed live over WebSockets."],
+              ["EXACT", "Fixed-precision matching so fractional quantities settle correctly."],
+              ["FAIR", "Self-trade protection stops an account matching its own orders."],
             ].map(([n, l], i) => (
               <div key={n} className={`flex-1 ${i ? "border-l border-white/15 pl-[1.1vw]" : "pr-[1.1vw]"}`}>
-                <p className="ab-display text-[clamp(1.5rem,min(2.7vw,4.8vh),2.4rem)] leading-none">{n}</p>
-                <p className="mt-[1.4vh] max-w-[150px] text-[clamp(9px,1.3vh,11px)] leading-snug text-slate-400">{l}</p>
+                <p className="ab-display text-[clamp(1rem,calc(min(2.1vw,3.7vh)-2px),1.775rem)] leading-none">{n}</p>
+                <p className="mt-[1.4vh] max-w-[150px] text-[clamp(9px,1.3vh,11px)] leading-snug text-slate-500">{l}</p>
               </div>
             ))}
           </div>
